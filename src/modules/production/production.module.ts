@@ -3,12 +3,12 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { ConsoleModule } from 'nestjs-console';
 import { ProduceProductCliController } from './commands/produce-product/produce-product.cli.controller';
 import { ProduceProductService } from './commands/produce-product/produce-product.service';
-import { UpdateSchedulerService } from '../monitor/commands/update-scheduler/update-scheduler.service';
+import { UpdatePipelineService } from '../monitor/commands/update-pipeline/update-pipeline.service';
 import { productionServiceLoggerProvider } from './providers/production.providers';
 
 const cliControllers = [ProduceProductCliController];
 
-const commandHandlers = [ProduceProductService, UpdateSchedulerService];
+const commandHandlers = [ProduceProductService, UpdatePipelineService];
 
 const customProviders = [productionServiceLoggerProvider];
 

@@ -6,7 +6,7 @@ import { ProductionStatus } from '@src/interface-adapters/interfaces/production/
 export class MonitorQueryHandler {
   constructor(private readonly produceProductService: ProduceProductService) {}
 
-  getProductionStatus(): ProductionStatus {
+  getPipelineStatus(): ProductionStatus {
     if (!this.produceProductService.isAvailable()) {
       return {} as ProductionStatus;
     }

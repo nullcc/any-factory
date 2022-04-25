@@ -3,8 +3,8 @@ import {
   CommandProps,
 } from '@libs/ddd/domain/base-classes/command.base';
 
-export class UpdateSchedulerCommand extends Command {
-  constructor(props: CommandProps<UpdateSchedulerCommand>) {
+export class UpdatePipelineCommand extends Command {
+  constructor(props: CommandProps<UpdatePipelineCommand>) {
     super(props);
     this.concurrency = props.concurrency;
     this.specs = props.specs;

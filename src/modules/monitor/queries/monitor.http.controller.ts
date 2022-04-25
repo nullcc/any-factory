@@ -8,7 +8,7 @@ import { StatusHttpResponse } from '@modules/monitor/dtos/status.response.dto';
 export class MonitorHttpController {
   constructor(private readonly monitorQueryHandler: MonitorQueryHandler) {}
 
-  @Get('/production/status')
+  @Get('/pipeline/status')
   @ApiOperation({ summary: 'Get status of production' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -16,7 +16,7 @@ export class MonitorHttpController {
   })
   getStatus(): any {
     return new StatusHttpResponse(
-      this.monitorQueryHandler.getProductionStatus(),
+      this.monitorQueryHandler.getPipelineStatus(),
     );
   }
 }

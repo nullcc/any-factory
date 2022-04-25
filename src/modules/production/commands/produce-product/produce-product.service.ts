@@ -5,9 +5,9 @@ import { Logger } from '@libs/ddd/domain/ports/logger.port';
 import { CommandHandlerBase } from '@src/libs/ddd/domain/base-classes/command-handler.base';
 import { ProduceProductCommand } from './produce-product.command';
 import {
-  SchedulerEntity,
+  PipelineEntity,
   Summary,
-} from '@modules/production/domain/entities/scheduler.entity';
+} from '@modules/production/domain/entities/pipelineEntity';
 import { Production } from '@modules/production/domain/value-objects/production.value-object';
 import { produceProductServiceLoggerSymbol } from '@modules/production/providers/production.providers';
 
@@ -16,7 +16,7 @@ import { produceProductServiceLoggerSymbol } from '@modules/production/providers
 })
 @CommandHandler(ProduceProductCommand)
 export class ProduceProductService extends CommandHandlerBase {
-  private schedulerEntity: SchedulerEntity;
+  private pipelineEntity: PipelineEntity;
   private isRunning = false;
 
   constructor(
@@ -37,12 +37,12 @@ export class ProduceProductService extends CommandHandlerBase {
     this.logger.log(
       `Produces products: ${JSON.stringify(production.getRawProps(), null, 2)}`,
     );
-    const result = SchedulerEntity.create({ production: production });
+    const result = PipelineEntity.create({ production: production });
     return result.unwrap(
-      async (scheduler) => {
+      async (pipeline) => {
         this.isRunning = true;
-        this.schedulerEntity = scheduler;
-        this.schedulerEntity.run();
+        this.pipelineEntity = pipeline;
+        this.pipelineEntity.run();
         return Result.ok(true);
       },
       async (error) => {
@@ -56,24 +56,24 @@ export class ProduceProductService extends CommandHandlerBase {
   }
 
   getConcurrency() {
-    return this.schedulerEntity.getConcurrency();
+    return this.pipelineEntity.getConcurrency();
   }
 
   setConcurrency(value: number) {
     this.logger.log(`Sets concurrency to: ${value}`);
-    this.schedulerEntity.setConcurrency(value);
+    this.pipelineEntity.setConcurrency(value);
   }
 
   addSpecs(specs: string[]) {
     this.logger.log(`Adds specs: ${specs}`);
-    this.schedulerEntity.addSpecs(specs);
+    this.pipelineEntity.addSpecs(specs);
   }
 
   getSummary(): Summary {
-    return this.schedulerEntity.getSummary();
+    return this.pipelineEntity.getSummary();
   }
 
   getSpecs(): string[] {
-    return this.schedulerEntity.getSpecs();
+    return this.pipelineEntity.getSpecs();
   }
 }

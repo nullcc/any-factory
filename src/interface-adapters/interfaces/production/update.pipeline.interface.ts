@@ -1,4 +1,4 @@
-export interface UpdateScheduler {
+export interface UpdatePipeline {
   concurrency: number;
   specs: string[];
 }

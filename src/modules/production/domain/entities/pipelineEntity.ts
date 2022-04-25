@@ -17,13 +17,13 @@ export interface Summary {
   pending: number;
 }
 
-export interface CreateSchedulerProps {
+export interface CreatePipelineProps {
   production: Production;
 }
 
-export type SchedulerProps = CreateEntityProps<CreateSchedulerProps>;
+export type PipelineProps = CreateEntityProps<CreatePipelineProps>;
 
-export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
+export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
   protected readonly _id: UUID;
   private specs: string[];
   private concurrency: number;
@@ -36,24 +36,24 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
   private readonly okSpecs: Map<string, number>;
   private readonly errorSpecs: Map<string, number>;
 
-  static create(create: CreateSchedulerProps): Result<SchedulerEntity, Error> {
+  static create(create: CreatePipelineProps): Result<PipelineEntity, Error> {
     const id = UUID.generate();
-    const props: CreateSchedulerProps = { ...create };
-    return SchedulerEntity.doCreate(id, props);
+    const props: CreatePipelineProps = { ...create };
+    return PipelineEntity.doCreate(id, props);
   }
 
   static doCreate(
     id: UUID,
-    props: CreateSchedulerProps,
-  ): Result<SchedulerEntity, Error> {
-    const entityProps: CreateSchedulerProps = {
+    props: CreatePipelineProps,
+  ): Result<PipelineEntity, Error> {
+    const entityProps: CreatePipelineProps = {
       ...props,
     };
-    const entity = new SchedulerEntity({ id, props: entityProps });
+    const entity = new PipelineEntity({ id, props: entityProps });
     return Result.ok(entity);
   }
 
-  constructor(props: SchedulerProps) {
+  constructor(props: PipelineProps) {
     super(props);
     this.specs = [];
     this.concurrency = props.props.production.concurrency;
@@ -66,7 +66,7 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
       running: 0,
       pending: 0,
     };
-    this.logger = new ConsoleLogger(SchedulerEntity.name);
+    this.logger = new ConsoleLogger(PipelineEntity.name);
     this.counter = 0;
     this.okSpecs = new Map<string, number>();
     this.errorSpecs = new Map<string, number>();

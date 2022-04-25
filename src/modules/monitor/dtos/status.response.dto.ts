@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Summary } from '@modules/production/domain/entities/scheduler.entity';
+import { Summary } from '@modules/production/domain/entities/pipelineEntity';
 import { ProductionStatus } from '@src/interface-adapters/interfaces/production/production-status.interface';
 
 export class StatusResponse implements ProductionStatus {

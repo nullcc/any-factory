@@ -3,14 +3,14 @@ import { CommandBus, CommandHandler } from '@nestjs/cqrs';
 import { Result } from '@libs/ddd/domain/utils/result.util';
 import { CommandHandlerBase } from '@libs/ddd/domain/base-classes/command-handler.base';
 import { ProduceProductService } from '@modules/production/commands/produce-product/produce-product.service';
-import { UpdateSchedulerCommand } from '@modules/monitor/commands/update-scheduler/update-scheduler.command';
+import { UpdatePipelineCommand } from '@modules/monitor/commands/update-pipeline/update-pipeline.command';
 
 @Injectable({
   scope: Scope.DEFAULT,
 })
-@CommandHandler(UpdateSchedulerCommand)
-export class UpdateSchedulerService extends CommandHandlerBase {
-  private logger = new ConsoleLogger(UpdateSchedulerService.name);
+@CommandHandler(UpdatePipelineCommand)
+export class UpdatePipelineService extends CommandHandlerBase {
+  private logger = new ConsoleLogger(UpdatePipelineService.name);
 
   constructor(
     private readonly commandBus: CommandBus,
@@ -20,7 +20,7 @@ export class UpdateSchedulerService extends CommandHandlerBase {
   }
 
   async handle(
-    command: UpdateSchedulerCommand,
+    command: UpdatePipelineCommand,
   ): Promise<Result<boolean, Error>> {
     if (!this.produceProductService.isAvailable()) {
       return Result.ok(true);
