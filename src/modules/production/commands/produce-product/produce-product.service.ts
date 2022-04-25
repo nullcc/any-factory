@@ -7,7 +7,7 @@ import { ProduceProductCommand } from './produce-product.command';
 import {
   PipelineEntity,
   Summary,
-} from '@modules/production/domain/entities/pipelineEntity';
+} from '@modules/production/domain/entities/pipeline.entity';
 import { Production } from '@modules/production/domain/value-objects/production.value-object';
 import { produceProductServiceLoggerSymbol } from '@modules/production/providers/production.providers';
 
