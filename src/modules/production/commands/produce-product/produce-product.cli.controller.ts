@@ -10,8 +10,8 @@ export class ProduceProductCliController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Command({
-    command: 'produce-product',
-    description: 'Produce product',
+    command: 'produce-products',
+    description: 'Produce products',
     options: [
       {
         flags: '-s, --specs <specs>',
@@ -34,7 +34,7 @@ export class ProduceProductCliController {
       },
     ],
   })
-  async generateAccounts(opts: Production): Promise<void> {
+  async produceProducts(opts: Production): Promise<void> {
     const command = new ProduceProductCommand(opts);
     await this.commandBus.execute(command);
   }

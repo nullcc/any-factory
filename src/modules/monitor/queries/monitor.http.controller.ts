@@ -16,7 +16,7 @@ export class MonitorHttpController {
   })
   getStatus(): any {
     return new StatusHttpResponse(
-      this.monitorQueryHandler.getAccountGenerationStatus(),
+      this.monitorQueryHandler.getProductionStatus(),
     );
   }
 }

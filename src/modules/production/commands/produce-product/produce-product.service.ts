@@ -8,8 +8,8 @@ import {
   SchedulerEntity,
   Summary,
 } from '@modules/production/domain/entities/scheduler.entity';
-import { AccountGeneration } from '@modules/production/domain/value-objects/account-generation.value-object';
-import { generateAccountServiceLoggerSymbol } from '@modules/production/providers/account-generation.providers';
+import { Production } from '@modules/production/domain/value-objects/production.value-object';
+import { produceProductServiceLoggerSymbol } from '@modules/production/providers/production.providers';
 
 @Injectable({
   scope: Scope.DEFAULT,
@@ -21,7 +21,7 @@ export class ProduceProductService extends CommandHandlerBase {
 
   constructor(
     private readonly commandBus: CommandBus,
-    @Inject(generateAccountServiceLoggerSymbol)
+    @Inject(produceProductServiceLoggerSymbol)
     private readonly logger: Logger,
   ) {
     super();
@@ -30,19 +30,14 @@ export class ProduceProductService extends CommandHandlerBase {
   async handle(
     command: ProduceProductCommand,
   ): Promise<Result<boolean, Error>> {
-    const accountGeneration = new AccountGeneration({
-      env: command.env,
+    const production = new Production({
       specs: command.specs,
       concurrency: command.concurrency,
     });
     this.logger.log(
-      `Generate accounts: ${JSON.stringify(
-        accountGeneration.getRawProps(),
-        null,
-        2,
-      )}`,
+      `Produces products: ${JSON.stringify(production.getRawProps(), null, 2)}`,
     );
-    const result = SchedulerEntity.create({ accountGeneration });
+    const result = SchedulerEntity.create({ production: production });
     return result.unwrap(
       async (scheduler) => {
         this.isRunning = true;

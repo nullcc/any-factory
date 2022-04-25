@@ -8,7 +8,7 @@ import { ProductionTaskTriggeredEvent } from '@modules/production/events/product
 @Injectable()
 export class ProductionTaskSagas {
   @Saga()
-  accountGenerationTaskTriggered = (
+  productionTaskTriggered = (
     events$: Observable<any>,
   ): Observable<Command> => {
     return events$.pipe(

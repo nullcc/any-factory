@@ -1,13 +1,13 @@
 import { Logger } from '@libs/ddd/domain/ports/logger.port';
 import { ConsoleLogger, Provider } from '@nestjs/common';
 
-export const productionServiceLoggerSymbol = Symbol(
-  'productionServiceLoggerSymbol',
+export const produceProductServiceLoggerSymbol = Symbol(
+  'produceProductServiceLoggerSymbol',
 );
 
 export const productionServiceLoggerProvider: Provider = {
-  provide: productionServiceLoggerSymbol,
+  provide: produceProductServiceLoggerSymbol,
   useFactory: (): Logger => {
-    return new ConsoleLogger('ProductionService');
+    return new ConsoleLogger('ProduceProductService');
   },
 };

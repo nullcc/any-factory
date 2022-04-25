@@ -4,16 +4,16 @@ import { ProductionStatus } from '@src/interface-adapters/interfaces/production/
 
 @Injectable()
 export class MonitorQueryHandler {
-  constructor(private readonly generateAccountService: ProduceProductService) {}
+  constructor(private readonly produceProductService: ProduceProductService) {}
 
-  getAccountGenerationStatus(): ProductionStatus {
-    if (!this.generateAccountService.isAvailable()) {
+  getProductionStatus(): ProductionStatus {
+    if (!this.produceProductService.isAvailable()) {
       return {} as ProductionStatus;
     }
     return {
-      summary: this.generateAccountService.getSummary(),
-      concurrency: this.generateAccountService.getConcurrency(),
-      specs: this.generateAccountService.getSpecs(),
+      summary: this.produceProductService.getSummary(),
+      concurrency: this.produceProductService.getConcurrency(),
+      specs: this.produceProductService.getSpecs(),
     };
   }
 }

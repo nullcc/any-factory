@@ -5,7 +5,7 @@ import { ProductionTaskSagas } from './sagas/production-task.saga';
 import { ProduceProductCliController } from './commands/produce-product/produce-product.cli.controller';
 import { ProduceProductService } from './commands/produce-product/produce-product.service';
 import { UpdateSchedulerService } from '../monitor/commands/update-scheduler/update-scheduler.service';
-import { generateAccountServiceLoggerProvider } from './providers/account-generation.providers';
+import { productionServiceLoggerProvider } from './providers/production.providers';
 
 const cliControllers = [ProduceProductCliController];
 
@@ -13,7 +13,7 @@ const commandHandlers = [ProduceProductService, UpdateSchedulerService];
 
 const sagas = [ProductionTaskSagas];
 
-const customProviders = [generateAccountServiceLoggerProvider];
+const customProviders = [productionServiceLoggerProvider];
 
 @Global()
 @Module({

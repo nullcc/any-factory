@@ -6,8 +6,7 @@ import { AggregateRoot } from '@libs/ddd/domain/base-classes/aggregate-root.base
 import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { Result } from '@libs/ddd/domain/utils/result.util';
 import { Logger } from '@libs/ddd/domain/ports/logger.port';
-import { AccountGeneration } from '@modules/production/domain/value-objects/account-generation.value-object';
-import { DesiredAccount } from '@modules/production/domain/value-objects/desired-account.value-object';
+import { Production } from '@modules/production/domain/value-objects/production.value-object';
 import { sleep } from '@libs/ddd/domain/utils/common';
 import { CreateEntityProps } from '@libs/ddd/domain/base-classes/entity.base';
 
@@ -19,7 +18,7 @@ export interface Summary {
 }
 
 export interface CreateSchedulerProps {
-  accountGeneration: AccountGeneration;
+  production: Production;
 }
 
 export type SchedulerProps = CreateEntityProps<CreateSchedulerProps>;
@@ -28,7 +27,7 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
   protected readonly _id: UUID;
   private specs: string[];
   private concurrency: number;
-  private readonly pendingQueue: Queue<DesiredAccount>;
+  private readonly pendingQueue: Queue<string>;
   private running: number;
   private semaphore: Semaphore;
   private readonly summary: Summary;
@@ -57,8 +56,8 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
   constructor(props: SchedulerProps) {
     super(props);
     this.specs = [];
-    this.concurrency = props.props.accountGeneration.concurrency;
-    this.pendingQueue = new Queue<DesiredAccount>();
+    this.concurrency = props.props.production.concurrency;
+    this.pendingQueue = new Queue<string>();
     this.running = 0;
     this.semaphore = new Semaphore(this.concurrency);
     this.summary = {
@@ -71,7 +70,7 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
     this.counter = 0;
     this.okSpecs = new Map<string, number>();
     this.errorSpecs = new Map<string, number>();
-    this.loadDesiredAccounts(props.props.accountGeneration.specs);
+    this.loadProductSpecs(props.props.production.specs);
   }
 
   async run(): Promise<void> {
@@ -80,14 +79,14 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
         this.logger.log('🍺 Done, bye bye ~');
         process.exit(0);
       }
-      if (!this.hasAvailablePipelines() || !this.hasPendingAccounts()) {
+      if (!this.hasAvailablePipelines() || !this.hasPendingProducts()) {
         await sleep(1000);
         continue;
       }
       try {
         const [value, release] = await this.semaphore.acquire();
-        const desiredAccount = this.pendingQueue.dequeue();
-        this.trigger(desiredAccount, release);
+        const productSpec = this.pendingQueue.dequeue();
+        this.trigger(productSpec, release);
       } catch (err) {
         // todo
       }
@@ -108,7 +107,7 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
   }
 
   addSpecs(specs: string[]) {
-    this.loadDesiredAccounts(specs);
+    this.loadProductSpecs(specs);
   }
 
   getSummary(): Summary {
@@ -125,7 +124,7 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
   }
 
   private async trigger(
-    desiredAccount: DesiredAccount,
+    productSpec: string,
     release: SemaphoreInterface.Releaser,
   ): Promise<void> {
     this.running += 1;
@@ -133,29 +132,29 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
     const counter = this.counter;
     try {
       this.logger.log(
-        `🚧 No.${counter} pipeline is going to be triggered with desired account: ${JSON.stringify(
-          desiredAccount.name,
+        `🚧 No.${counter} pipeline is going to be triggered with product spec: ${JSON.stringify(
+          productSpec,
           null,
           2,
-        )}, ${this.pendingQueue.size()} account(s) is pending.`,
+        )}, ${this.pendingQueue.size()} products(s) is pending.`,
       );
       await sleep(5000);
       this.summary['ok'] += 1;
-      this.increaseOkSpec(desiredAccount.name);
+      this.increaseOkSpec(productSpec);
       this.logger.log(`✅ No.${counter} pipeline finished.`);
     } catch (err) {
       this.summary['error'] += 1;
-      this.increaseErrorSpec(desiredAccount.name);
+      this.increaseErrorSpec(productSpec);
     } finally {
       this.running -= 1;
       release();
       this.logger.log(
-        `ℹ️ Summary: ${JSON.stringify(this.getSummary(), null, 2)}`,
+        `ℹ️  Summary: ${JSON.stringify(this.getSummary(), null, 2)}`,
       );
     }
   }
 
-  private loadDesiredAccounts(specs: string[]): void {
+  private loadProductSpecs(specs: string[]): void {
     this.specs = this.specs.concat(specs);
     const results = _.chain(specs)
       .map((e) => {
@@ -166,7 +165,7 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
       .flatMap()
       .value();
     results.forEach((item) => {
-      this.pendingQueue.enqueue(DesiredAccount.build(item));
+      this.pendingQueue.enqueue(item);
     });
   }
 
@@ -178,7 +177,7 @@ export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
     return !this.semaphore.isLocked();
   }
 
-  private hasPendingAccounts(): boolean {
+  private hasPendingProducts(): boolean {
     return this.pendingQueue.size() > 0;
   }
 

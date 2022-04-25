@@ -14,7 +14,7 @@ export class UpdateSchedulerService extends CommandHandlerBase {
 
   constructor(
     private readonly commandBus: CommandBus,
-    private readonly generateAccountService: ProduceProductService,
+    private readonly produceProductService: ProduceProductService,
   ) {
     super();
   }
@@ -22,14 +22,14 @@ export class UpdateSchedulerService extends CommandHandlerBase {
   async handle(
     command: UpdateSchedulerCommand,
   ): Promise<Result<boolean, Error>> {
-    if (!this.generateAccountService.isAvailable()) {
+    if (!this.produceProductService.isAvailable()) {
       return Result.ok(true);
     }
     if (command.concurrency > 0) {
-      this.generateAccountService.setConcurrency(command.concurrency);
+      this.produceProductService.setConcurrency(command.concurrency);
     }
     if (command.specs) {
-      this.generateAccountService.addSpecs(command.specs);
+      this.produceProductService.addSpecs(command.specs);
     }
     return Result.ok(true);
   }

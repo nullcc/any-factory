@@ -10,17 +10,17 @@ export class StatusResponse implements ProductionStatus {
   }
 
   @ApiProperty({
-    description: 'Account generation summary',
+    description: 'Production summary',
   })
   summary: Summary;
 
   @ApiProperty({
-    description: 'Account generation concurrency',
+    description: 'Production concurrency',
   })
   concurrency: number;
 
   @ApiProperty({
-    description: 'Account generation specs',
+    description: 'Product specs',
   })
   specs: string[];
 }
