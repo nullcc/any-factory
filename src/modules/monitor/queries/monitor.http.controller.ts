@@ -9,7 +9,7 @@ export class MonitorHttpController {
   constructor(private readonly monitorQueryHandler: MonitorQueryHandler) {}
 
   @Get('/pipeline/status')
-  @ApiOperation({ summary: 'Get status of production' })
+  @ApiOperation({ summary: 'Get status of pipeline' })
   @ApiResponse({
     status: HttpStatus.OK,
     type: StatusHttpResponse,
