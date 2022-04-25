@@ -1,0 +1,202 @@
+import Queue from 'queue-fifo';
+import { Semaphore, SemaphoreInterface } from 'async-mutex';
+import { ConsoleLogger } from '@nestjs/common';
+import * as _ from 'lodash';
+import { AggregateRoot } from '@libs/ddd/domain/base-classes/aggregate-root.base';
+import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
+import { Result } from '@libs/ddd/domain/utils/result.util';
+import { Logger } from '@libs/ddd/domain/ports/logger.port';
+import { AccountGeneration } from '@modules/production/domain/value-objects/account-generation.value-object';
+import { DesiredAccount } from '@modules/production/domain/value-objects/desired-account.value-object';
+import { sleep } from '@libs/ddd/domain/utils/common';
+import { CreateEntityProps } from '@libs/ddd/domain/base-classes/entity.base';
+
+export interface Summary {
+  ok: number;
+  error: number;
+  running: number;
+  pending: number;
+}
+
+export interface CreateSchedulerProps {
+  accountGeneration: AccountGeneration;
+}
+
+export type SchedulerProps = CreateEntityProps<CreateSchedulerProps>;
+
+export class SchedulerEntity extends AggregateRoot<CreateSchedulerProps> {
+  protected readonly _id: UUID;
+  private specs: string[];
+  private concurrency: number;
+  private readonly pendingQueue: Queue<DesiredAccount>;
+  private running: number;
+  private semaphore: Semaphore;
+  private readonly summary: Summary;
+  private readonly logger: Logger;
+  private counter: number;
+  private readonly okSpecs: Map<string, number>;
+  private readonly errorSpecs: Map<string, number>;
+
+  static create(create: CreateSchedulerProps): Result<SchedulerEntity, Error> {
+    const id = UUID.generate();
+    const props: CreateSchedulerProps = { ...create };
+    return SchedulerEntity.doCreate(id, props);
+  }
+
+  static doCreate(
+    id: UUID,
+    props: CreateSchedulerProps,
+  ): Result<SchedulerEntity, Error> {
+    const entityProps: CreateSchedulerProps = {
+      ...props,
+    };
+    const entity = new SchedulerEntity({ id, props: entityProps });
+    return Result.ok(entity);
+  }
+
+  constructor(props: SchedulerProps) {
+    super(props);
+    this.specs = [];
+    this.concurrency = props.props.accountGeneration.concurrency;
+    this.pendingQueue = new Queue<DesiredAccount>();
+    this.running = 0;
+    this.semaphore = new Semaphore(this.concurrency);
+    this.summary = {
+      ok: 0,
+      error: 0,
+      running: 0,
+      pending: 0,
+    };
+    this.logger = new ConsoleLogger(SchedulerEntity.name);
+    this.counter = 0;
+    this.okSpecs = new Map<string, number>();
+    this.errorSpecs = new Map<string, number>();
+    this.loadDesiredAccounts(props.props.accountGeneration.specs);
+  }
+
+  async run(): Promise<void> {
+    while (true) {
+      if (this.isCompleted()) {
+        this.logger.log('🍺 Done, bye bye ~');
+        process.exit(0);
+      }
+      if (!this.hasAvailablePipelines() || !this.hasPendingAccounts()) {
+        await sleep(1000);
+        continue;
+      }
+      try {
+        const [value, release] = await this.semaphore.acquire();
+        const desiredAccount = this.pendingQueue.dequeue();
+        this.trigger(desiredAccount, release);
+      } catch (err) {
+        // todo
+      }
+    }
+  }
+
+  getConcurrency(): number {
+    return this.concurrency;
+  }
+
+  setConcurrency(value: number) {
+    if (value < 1) {
+      return;
+    }
+    this.concurrency = value;
+    this.semaphore.cancel();
+    this.semaphore = new Semaphore(this.concurrency);
+  }
+
+  addSpecs(specs: string[]) {
+    this.loadDesiredAccounts(specs);
+  }
+
+  getSummary(): Summary {
+    return {
+      ok: this.summary.ok,
+      error: this.summary.error,
+      running: this.running,
+      pending: this.pendingQueue.size(),
+    };
+  }
+
+  getSpecs(): string[] {
+    return this.specs;
+  }
+
+  private async trigger(
+    desiredAccount: DesiredAccount,
+    release: SemaphoreInterface.Releaser,
+  ): Promise<void> {
+    this.running += 1;
+    this.counter += 1;
+    const counter = this.counter;
+    try {
+      this.logger.log(
+        `🚧 No.${counter} pipeline is going to be triggered with desired account: ${JSON.stringify(
+          desiredAccount.name,
+          null,
+          2,
+        )}, ${this.pendingQueue.size()} account(s) is pending.`,
+      );
+      await sleep(5000);
+      this.summary['ok'] += 1;
+      this.increaseOkSpec(desiredAccount.name);
+      this.logger.log(`✅ No.${counter} pipeline finished.`);
+    } catch (err) {
+      this.summary['error'] += 1;
+      this.increaseErrorSpec(desiredAccount.name);
+    } finally {
+      this.running -= 1;
+      release();
+      this.logger.log(
+        `ℹ️ Summary: ${JSON.stringify(this.getSummary(), null, 2)}`,
+      );
+    }
+  }
+
+  private loadDesiredAccounts(specs: string[]): void {
+    this.specs = this.specs.concat(specs);
+    const results = _.chain(specs)
+      .map((e) => {
+        const [spec, n] = e.split(':');
+        const count = isNaN(parseInt(n)) ? 1 : parseInt(n);
+        return _.range(count).map((e) => spec);
+      })
+      .flatMap()
+      .value();
+    results.forEach((item) => {
+      this.pendingQueue.enqueue(DesiredAccount.build(item));
+    });
+  }
+
+  private isCompleted(): boolean {
+    return this.pendingQueue.isEmpty() && this.running === 0;
+  }
+
+  private hasAvailablePipelines(): boolean {
+    return !this.semaphore.isLocked();
+  }
+
+  private hasPendingAccounts(): boolean {
+    return this.pendingQueue.size() > 0;
+  }
+
+  private increaseOkSpec(spec: string): void {
+    const value = this.okSpecs.get(spec);
+    if (value === undefined) {
+      this.okSpecs.set(spec, 1);
+    } else {
+      this.okSpecs.set(spec, value + 1);
+    }
+  }
+
+  private increaseErrorSpec(spec: string): void {
+    const value = this.errorSpecs.get(spec);
+    if (value === undefined) {
+      this.errorSpecs.set(spec, 1);
+    } else {
+      this.errorSpecs.set(spec, value + 1);
+    }
+  }
+}
