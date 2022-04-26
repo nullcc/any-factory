@@ -24,7 +24,7 @@ export class ProduceProductCliController {
         required: false,
         defaultValue: 1,
         fn: (value) => parseInt(value),
-        description: 'Concurrency of production task',
+        description: 'Concurrency of pipeline',
       },
       {
         flags: '--with-server',
