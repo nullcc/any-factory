@@ -25,9 +25,7 @@ export class UpdatePipelineService extends CommandHandlerBase {
     if (!this.produceProductService.isAvailable()) {
       return Result.ok(true);
     }
-    if (command.concurrency > 0) {
-      this.produceProductService.setConcurrency(command.concurrency);
-    }
+    this.produceProductService.setConcurrency(command.concurrency);
     if (command.specs) {
       this.produceProductService.addSpecs(command.specs);
     }

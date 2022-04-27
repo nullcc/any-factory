@@ -9,6 +9,7 @@ import {
   Summary,
 } from '@modules/production/domain/entities/pipeline.entity';
 import { Production } from '@modules/production/domain/value-objects/production.value-object';
+import { Concurrency } from '@modules/production/domain/value-objects/concurrency.value-object';
 import { produceProductServiceLoggerSymbol } from '@modules/production/providers/production.providers';
 
 @Injectable({
@@ -32,7 +33,9 @@ export class ProduceProductService extends CommandHandlerBase {
   ): Promise<Result<boolean, Error>> {
     const production = new Production({
       specs: command.specs,
-      concurrency: command.concurrency,
+      concurrency: new Concurrency({
+        n: command.concurrency,
+      }),
     });
     this.logger.log(
       `Produces products: ${JSON.stringify(production.getRawProps(), null, 2)}`,
@@ -61,7 +64,10 @@ export class ProduceProductService extends CommandHandlerBase {
 
   setConcurrency(value: number) {
     this.logger.log(`Sets concurrency to: ${value}`);
-    this.pipelineEntity.setConcurrency(value);
+    const newConcurrency = new Concurrency({
+      n: value,
+    });
+    this.pipelineEntity.setConcurrency(newConcurrency);
   }
 
   addSpecs(specs: string[]) {

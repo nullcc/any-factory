@@ -7,6 +7,7 @@ import { UUID } from '@libs/ddd/domain/value-objects/uuid.value-object';
 import { Result } from '@libs/ddd/domain/utils/result.util';
 import { Logger } from '@libs/ddd/domain/ports/logger.port';
 import { Production } from '@modules/production/domain/value-objects/production.value-object';
+import { Concurrency } from '@modules/production/domain/value-objects/concurrency.value-object';
 import { sleep } from '@libs/ddd/domain/utils/common';
 import { CreateEntityProps } from '@libs/ddd/domain/base-classes/entity.base';
 
@@ -26,7 +27,7 @@ export type PipelineProps = CreateEntityProps<CreatePipelineProps>;
 export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
   protected readonly _id: UUID;
   private specs: string[];
-  private concurrency: number;
+  private concurrency: Concurrency;
   private readonly pendingQueue: Queue<string>;
   private running: number;
   private semaphore: Semaphore;
@@ -56,10 +57,12 @@ export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
   constructor(props: PipelineProps) {
     super(props);
     this.specs = [];
-    this.concurrency = props.props.production.concurrency;
+    this.concurrency = new Concurrency({
+      n: props.props.production.concurrency.n,
+    });
     this.pendingQueue = new Queue<string>();
     this.running = 0;
-    this.semaphore = new Semaphore(this.concurrency);
+    this.semaphore = new Semaphore(this.concurrency.n);
     this.summary = {
       ok: 0,
       error: 0,
@@ -94,16 +97,13 @@ export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
   }
 
   getConcurrency(): number {
-    return this.concurrency;
+    return this.concurrency.n;
   }
 
-  setConcurrency(value: number) {
-    if (value < 1) {
-      return;
-    }
-    this.concurrency = value;
+  setConcurrency(concurrency: Concurrency) {
+    this.concurrency = concurrency;
     this.semaphore.cancel();
-    this.semaphore = new Semaphore(this.concurrency);
+    this.semaphore = new Semaphore(this.concurrency.n);
   }
 
   addSpecs(specs: string[]) {
