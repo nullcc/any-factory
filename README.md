@@ -2,6 +2,12 @@
 
 Sample project for observable and dynamic CLI application.
 
+## Installation
+
+```bash
+npm i -g @nullcc/any-factory
+```
+
 ## Usages
 
 ```bash
@@ -27,5 +33,4 @@ Options:
   -c, --concurrency <concurrency>  Concurrency of production task (default: 1)
   --with-server                    Will start a HTTP server to provide a way to inspect some internal data if specified
   -h, --help                       display help for command
-
 ```

@@ -1,10 +1,13 @@
 {
-  "name": "any-factory",
+  "name": "@nullcc/any-factory",
   "version": "0.0.1",
   "description": "",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "bin": {
+    "any-factory": "./bin/any-factory.js"
+  },
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
