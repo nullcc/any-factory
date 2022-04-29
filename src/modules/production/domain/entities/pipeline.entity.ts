@@ -8,14 +8,8 @@ import { Result } from '@libs/ddd/domain/utils/result.util';
 import { Logger } from '@libs/ddd/domain/ports/logger.port';
 import { Production } from '@modules/production/domain/value-objects/production.value-object';
 import { Concurrency } from '@modules/production/domain/value-objects/concurrency.value-object';
-import {
-  Spec,
-  SpecProps,
-} from '@modules/production/domain/value-objects/spec.value-object';
-import {
-  Summary,
-  SummaryProps,
-} from '@modules/production/domain/value-objects/summary.value-object';
+import { Spec } from '@modules/production/domain/value-objects/spec.value-object';
+import { Summary } from '@modules/production/domain/value-objects/summary.value-object';
 import { sleep } from '@libs/ddd/domain/utils/common';
 import { CreateEntityProps } from '@libs/ddd/domain/base-classes/entity.base';
 
@@ -106,17 +100,17 @@ export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
     this.loadProductSpecs(specs);
   }
 
-  getSummary(): SummaryProps {
+  getSummary(): Summary {
     return new Summary({
       ok: this.ok,
       error: this.error,
       running: this.running,
       pending: this.pendingQueue.size(),
-    }).getRawProps();
+    });
   }
 
-  getSpecs(): SpecProps[] {
-    return this.specs.map((spec) => spec.getRawProps());
+  getSpecs(): Spec[] {
+    return this.specs;
   }
 
   private async trigger(

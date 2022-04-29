@@ -11,9 +11,11 @@ export class MonitorQueryHandler {
       return {} as ProductionStatus;
     }
     return {
-      summary: this.produceProductService.getSummary(),
+      summary: this.produceProductService.getSummary().getRawProps(),
       concurrency: this.produceProductService.getConcurrency(),
-      specs: this.produceProductService.getSpecs(),
+      specs: this.produceProductService
+        .getSpecs()
+        .map((spec) => spec.getRawProps()),
     };
   }
 }

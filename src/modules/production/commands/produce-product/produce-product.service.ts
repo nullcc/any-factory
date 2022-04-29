@@ -6,9 +6,9 @@ import { CommandHandlerBase } from '@src/libs/ddd/domain/base-classes/command-ha
 import { ProduceProductCommand } from './produce-product.command';
 import { PipelineEntity } from '@modules/production/domain/entities/pipeline.entity';
 import { Production } from '@modules/production/domain/value-objects/production.value-object';
-import { SpecProps, Spec } from '@modules/production/domain/value-objects/spec.value-object';
+import { Spec } from '@modules/production/domain/value-objects/spec.value-object';
 import { Concurrency } from '@modules/production/domain/value-objects/concurrency.value-object';
-import { SummaryProps } from '@modules/production/domain/value-objects/summary.value-object';
+import { Summary } from '@modules/production/domain/value-objects/summary.value-object';
 import { produceProductServiceLoggerSymbol } from '@modules/production/providers/production.providers';
 
 @Injectable({
@@ -87,11 +87,11 @@ export class ProduceProductService extends CommandHandlerBase {
     this.pipelineEntity.addSpecs(additionalSpecs);
   }
 
-  getSummary(): SummaryProps {
+  getSummary(): Summary {
     return this.pipelineEntity.getSummary();
   }
 
-  getSpecs(): SpecProps[] {
+  getSpecs(): Spec[] {
     return this.pipelineEntity.getSpecs();
   }
 }
