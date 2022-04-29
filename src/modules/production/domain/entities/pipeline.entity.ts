@@ -8,15 +8,16 @@ import { Result } from '@libs/ddd/domain/utils/result.util';
 import { Logger } from '@libs/ddd/domain/ports/logger.port';
 import { Production } from '@modules/production/domain/value-objects/production.value-object';
 import { Concurrency } from '@modules/production/domain/value-objects/concurrency.value-object';
+import {
+  Spec,
+  SpecProps,
+} from '@modules/production/domain/value-objects/spec.value-object';
+import {
+  Summary,
+  SummaryProps,
+} from '@modules/production/domain/value-objects/summary.value-object';
 import { sleep } from '@libs/ddd/domain/utils/common';
 import { CreateEntityProps } from '@libs/ddd/domain/base-classes/entity.base';
-
-export interface Summary {
-  ok: number;
-  error: number;
-  running: number;
-  pending: number;
-}
 
 export interface CreatePipelineProps {
   production: Production;
@@ -26,16 +27,17 @@ export type PipelineProps = CreateEntityProps<CreatePipelineProps>;
 
 export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
   protected readonly _id: UUID;
-  private specs: string[];
+  private specs: Spec[];
   private concurrency: Concurrency;
   private readonly pendingQueue: Queue<string>;
   private running: number;
   private semaphore: Semaphore;
-  private readonly summary: Summary;
   private readonly logger: Logger;
   private counter: number;
   private readonly okSpecs: Map<string, number>;
   private readonly errorSpecs: Map<string, number>;
+  private ok = 0;
+  private error = 0;
 
   static create(create: CreatePipelineProps): Result<PipelineEntity, Error> {
     const id = UUID.generate();
@@ -63,12 +65,6 @@ export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
     this.pendingQueue = new Queue<string>();
     this.running = 0;
     this.semaphore = new Semaphore(this.concurrency.n);
-    this.summary = {
-      ok: 0,
-      error: 0,
-      running: 0,
-      pending: 0,
-    };
     this.logger = new ConsoleLogger(PipelineEntity.name);
     this.counter = 0;
     this.okSpecs = new Map<string, number>();
@@ -106,21 +102,21 @@ export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
     this.semaphore = new Semaphore(this.concurrency.n);
   }
 
-  addSpecs(specs: string[]) {
+  addSpecs(specs: Spec[]) {
     this.loadProductSpecs(specs);
   }
 
-  getSummary(): Summary {
-    return {
-      ok: this.summary.ok,
-      error: this.summary.error,
+  getSummary(): SummaryProps {
+    return new Summary({
+      ok: this.ok,
+      error: this.error,
       running: this.running,
       pending: this.pendingQueue.size(),
-    };
+    }).getRawProps();
   }
 
-  getSpecs(): string[] {
-    return this.specs;
+  getSpecs(): SpecProps[] {
+    return this.specs.map((spec) => spec.getRawProps());
   }
 
   private async trigger(
@@ -139,11 +135,11 @@ export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
         )}, ${this.pendingQueue.size()} products(s) is pending.`,
       );
       await sleep(5000);
-      this.summary['ok'] += 1;
+      this.updateResult('ok');
       this.increaseOkSpec(productSpec);
       this.logger.log(`✅ No.${counter} pipeline finished.`);
     } catch (err) {
-      this.summary['error'] += 1;
+      this.updateResult('error');
       this.increaseErrorSpec(productSpec);
     } finally {
       this.running -= 1;
@@ -154,13 +150,11 @@ export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
     }
   }
 
-  private loadProductSpecs(specs: string[]): void {
+  private loadProductSpecs(specs: Spec[]): void {
     this.specs = this.specs.concat(specs);
     const results = _.chain(specs)
-      .map((e) => {
-        const [spec, n] = e.split(':');
-        const count = isNaN(parseInt(n)) ? 1 : parseInt(n);
-        return _.range(count).map((e) => spec);
+      .map((spec) => {
+        return _.range(spec.count).map((e) => spec.name);
       })
       .flatMap()
       .value();
@@ -197,5 +191,9 @@ export class PipelineEntity extends AggregateRoot<CreatePipelineProps> {
     } else {
       this.errorSpecs.set(spec, value + 1);
     }
+  }
+
+  private updateResult(key: 'ok' | 'error'): void {
+    this[key] += 1;
   }
 }

@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Summary } from '@modules/production/domain/entities/pipeline.entity';
-import { ProductionStatus } from '@src/interface-adapters/interfaces/production/production-status.interface';
+import { ProductionStatus, Summary, Spec } from '@src/interface-adapters/interfaces/production/production-status.interface';
 
 export class StatusResponse implements ProductionStatus {
   constructor(status: ProductionStatus) {
@@ -22,7 +21,7 @@ export class StatusResponse implements ProductionStatus {
   @ApiProperty({
     description: 'Product specs',
   })
-  specs: string[];
+  specs: Spec[];
 }
 
 export class StatusHttpResponse

@@ -4,12 +4,11 @@ import { Result } from '@libs/ddd/domain/utils/result.util';
 import { Logger } from '@libs/ddd/domain/ports/logger.port';
 import { CommandHandlerBase } from '@src/libs/ddd/domain/base-classes/command-handler.base';
 import { ProduceProductCommand } from './produce-product.command';
-import {
-  PipelineEntity,
-  Summary,
-} from '@modules/production/domain/entities/pipeline.entity';
+import { PipelineEntity } from '@modules/production/domain/entities/pipeline.entity';
 import { Production } from '@modules/production/domain/value-objects/production.value-object';
+import { SpecProps, Spec } from '@modules/production/domain/value-objects/spec.value-object';
 import { Concurrency } from '@modules/production/domain/value-objects/concurrency.value-object';
+import { SummaryProps } from '@modules/production/domain/value-objects/summary.value-object';
 import { produceProductServiceLoggerSymbol } from '@modules/production/providers/production.providers';
 
 @Injectable({
@@ -32,7 +31,13 @@ export class ProduceProductService extends CommandHandlerBase {
     command: ProduceProductCommand,
   ): Promise<Result<boolean, Error>> {
     const production = new Production({
-      specs: command.specs,
+      specs: command.specs.map((spec) => {
+        const [name, count] = spec.split(':');
+        return new Spec({
+          name,
+          count: isNaN(parseInt(count)) ? 1 : parseInt(count),
+        });
+      }),
       concurrency: new Concurrency({
         n: command.concurrency,
       }),
@@ -58,7 +63,7 @@ export class ProduceProductService extends CommandHandlerBase {
     return this.isRunning;
   }
 
-  getConcurrency() {
+  getConcurrency(): number {
     return this.pipelineEntity.getConcurrency();
   }
 
@@ -72,14 +77,21 @@ export class ProduceProductService extends CommandHandlerBase {
 
   addSpecs(specs: string[]) {
     this.logger.log(`Adds specs: ${specs}`);
-    this.pipelineEntity.addSpecs(specs);
+    const additionalSpecs = specs.map((spec) => {
+      const [name, count] = spec.split(':');
+      return new Spec({
+        name,
+        count: isNaN(parseInt(count)) ? 1 : parseInt(count),
+      });
+    });
+    this.pipelineEntity.addSpecs(additionalSpecs);
   }
 
-  getSummary(): Summary {
+  getSummary(): SummaryProps {
     return this.pipelineEntity.getSummary();
   }
 
-  getSpecs(): string[] {
+  getSpecs(): SpecProps[] {
     return this.pipelineEntity.getSpecs();
   }
 }
