@@ -14,9 +14,7 @@ export class MonitorHttpController {
     status: HttpStatus.OK,
     type: StatusHttpResponse,
   })
-  getStatus(): any {
-    return new StatusHttpResponse(
-      this.monitorQueryHandler.getPipelineStatus(),
-    );
+  getStatus(): StatusHttpResponse {
+    return new StatusHttpResponse(this.monitorQueryHandler.getPipelineStatus());
   }
 }
