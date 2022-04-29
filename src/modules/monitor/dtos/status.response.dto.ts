@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ProductionStatus, Summary, Spec } from '@src/interface-adapters/interfaces/production/production-status.interface';
+import {
+  ProductionStatus,
+  Summary,
+  Spec,
+} from '@src/interface-adapters/interfaces/production/production-status.interface';
 
 export class StatusResponse implements ProductionStatus {
   constructor(status: ProductionStatus) {
