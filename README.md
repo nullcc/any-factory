@@ -34,3 +34,9 @@ Options:
   --with-server                    Will start a HTTP server to provide a way to inspect some internal data if specified
   -h, --help                       display help for command
 ```
+
+Sample:
+
+```bash
+any-factory produce-products --specs="a:10;b:20;c:30" --concurrency=1 --with-server
+```
