@@ -1,5 +1,6 @@
-import { Injectable, Scope, Inject } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { CommandBus, CommandHandler } from '@nestjs/cqrs';
+import { ConfigService } from 'nestjs-config';
 import { Result } from '@libs/ddd/domain/utils/result.util';
 import { Logger } from '@libs/ddd/domain/ports/logger.port';
 import { CommandHandlerBase } from '@src/libs/ddd/domain/base-classes/command-handler.base';
@@ -11,9 +12,7 @@ import { Concurrency } from '@modules/production/domain/value-objects/concurrenc
 import { Summary } from '@modules/production/domain/value-objects/summary.value-object';
 import { produceProductServiceLoggerSymbol } from '@modules/production/providers/production.providers';
 
-@Injectable({
-  scope: Scope.DEFAULT,
-})
+@Injectable()
 @CommandHandler(ProduceProductCommand)
 export class ProduceProductService extends CommandHandlerBase {
   private pipelineEntity: PipelineEntity;
@@ -23,6 +22,7 @@ export class ProduceProductService extends CommandHandlerBase {
     private readonly commandBus: CommandBus,
     @Inject(produceProductServiceLoggerSymbol)
     private readonly logger: Logger,
+    private readonly config: ConfigService,
   ) {
     super();
   }
@@ -30,6 +30,7 @@ export class ProduceProductService extends CommandHandlerBase {
   async handle(
     command: ProduceProductCommand,
   ): Promise<Result<boolean, Error>> {
+    const specServer = this.config.get('app.specServer');
     const production = new Production({
       specs: command.specs.map((spec) => {
         const [name, count] = spec.split(':');
@@ -42,6 +43,7 @@ export class ProduceProductService extends CommandHandlerBase {
         n: command.concurrency,
       }),
     });
+    this.logger.log(`Spec server: ${specServer}`);
     this.logger.log(
       `Produces products: ${JSON.stringify(production.getRawProps(), null, 2)}`,
     );
@@ -50,7 +52,7 @@ export class ProduceProductService extends CommandHandlerBase {
       async (pipeline) => {
         this.isRunning = true;
         this.pipelineEntity = pipeline;
-        this.pipelineEntity.run();
+        await this.pipelineEntity.run();
         return Result.ok(true);
       },
       async (error) => {
